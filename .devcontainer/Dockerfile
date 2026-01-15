@@ -44,7 +44,14 @@ RUN groupadd --gid $USER_GID $USERNAME \
 
 # Set up the Python development environment
 WORKDIR /home/project
-RUN python3 -m pip install --upgrade pip wheel
+
+# Copy and install dependencies first (for better caching)
+COPY requirements.txt .
+RUN python3 -m pip install --upgrade pip wheel && \
+    python3 -m pip install -r requirements.txt
+
+# Copy the application code
+COPY . .
 
 ENV PORT 8000
 EXPOSE $PORT
@@ -54,3 +61,6 @@ ENV TERM=xterm-256color
 
 # Become a regular user
 USER $USERNAME
+
+# Start the service using Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--log-level", "info", "service:app"]

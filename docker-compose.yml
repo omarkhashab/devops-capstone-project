@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    container_name: account_service
+    volumes:
+      - .:/home/project
+    environment:
+      DATABASE_URI: postgresql://postgres:postgres@db:5432/postgres
+      PORT: 8000
+      FLASK_APP: service:app
+      FLASK_ENV: development
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
